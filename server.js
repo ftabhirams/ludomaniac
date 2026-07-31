@@ -1,27 +1,19 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-    cors: { origin: "*" }
-});
+const io = require('socket.io')(http, { cors: { origin: "*" } });
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
 
-// GLOBAL STARTING OFFSETS FOR THE 52-CELL CIRCUIT
 const COLOR_OFFSETS = { RED: 0, GREEN: 13, YELLOW: 26, BLUE: 39 };
-
-// 8 SAFE GLOBAL TILES (4 Starts + 4 Stars) WHERE PAWNS CANNOT BE ATTACKED
 const SAFE_GLOBAL_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
 
 io.on('connection', (socket) => {
-    console.log('Player connected to Ludo Server:', socket.id);
-
-    socket.on('joinGame', ({ room, name }) => {
+    socket.on('joinGame', ({ room, name, dp }) => {
         socket.join(room);
         
         if (!rooms[room]) {
@@ -39,11 +31,18 @@ io.on('connection', (socket) => {
 
         if (!player) {
             if (roomData.players.length >= 4) {
-                socket.emit('errorMsg', 'Match is full! (Max 4 players)');
+                socket.emit('errorMsg', 'Match is full!');
                 return;
             }
             const assignedColor = roomData.colors[roomData.players.length];
-            player = { id: socket.id, name: name || 'Player', color: assignedColor, tokens: [0, 0, 0, 0] };
+            // Save player's real display name and Chat App DP image URL
+            player = { 
+                id: socket.id, 
+                name: name || 'Player', 
+                dp: dp || 'https://via.placeholder.com/150',
+                color: assignedColor, 
+                tokens: [0, 0, 0, 0] 
+            };
             roomData.players.push(player);
         }
 
@@ -60,7 +59,7 @@ io.on('connection', (socket) => {
 
         const activePlayer = roomData.players[roomData.turnIndex];
         if (socket.id !== activePlayer.id) return socket.emit('errorMsg', "Not your turn!");
-        if (roomData.hasRolled) return; // Prevent double rolling
+        if (roomData.hasRolled) return;
 
         const roll = Math.floor(Math.random() * 6) + 1;
         roomData.diceValue = roll;
@@ -72,7 +71,7 @@ io.on('connection', (socket) => {
             currentTurnColor: activePlayer.color
         });
 
-        // AUTO-CHECK: If player has NO valid moves (e.g. all pawns locked and roll < 6), auto pass turn!
+        // Auto pass turn if no valid moves possible
         const canMove = activePlayer.tokens.some(pos => {
             if (pos === 0) return roll === 6;
             return (pos + roll) <= 57;
@@ -103,25 +102,23 @@ io.on('connection', (socket) => {
         let tokenPos = activePlayer.tokens[tokenIndex];
         const roll = roomData.diceValue;
 
-        // Rule 1: Need 6 to unlock from home (pos 0 -> pos 1)
         if (tokenPos === 0) {
             if (roll === 6) {
                 activePlayer.tokens[tokenIndex] = 1;
             } else {
-                return; // Cannot move locked pawn without a 6
+                return;
             }
         } else {
             if (tokenPos + roll <= 57) {
                 activePlayer.tokens[tokenIndex] += roll;
             } else {
-                return; // Cannot overshoot 57
+                return;
             }
         }
 
         const newPos = activePlayer.tokens[tokenIndex];
         let capturedSomeone = false;
 
-        // Rule 2: Check for Capturing / Attacking Opponents on Unsafe Tiles
         if (newPos >= 1 && newPos <= 51) {
             const offset = COLOR_OFFSETS[activePlayer.color];
             const landingGlobalTile = (newPos - 1 + offset) % 52;
@@ -134,7 +131,6 @@ io.on('connection', (socket) => {
                             if (otherPos >= 1 && otherPos <= 51) {
                                 const otherGlobalTile = (otherPos - 1 + otherOffset) % 52;
                                 if (otherGlobalTile === landingGlobalTile) {
-                                    // CAPTURE! Send opponent pawn back to home socket (0)
                                     otherPlayer.tokens[otherIdx] = 0;
                                     capturedSomeone = true;
                                 }
@@ -147,13 +143,11 @@ io.on('connection', (socket) => {
 
         roomData.hasRolled = false;
 
-        // Win Condition Check: All 4 tokens at home (57)
         const hasWon = activePlayer.tokens.every(pos => pos === 57);
         if (hasWon) {
             io.to(room).emit('gameWon', { winnerName: activePlayer.name, winnerColor: activePlayer.color });
         }
 
-        // Rule 3: Extra Turn on Rolling 6 or Capturing an Opponent
         if (roll !== 6 && !capturedSomeone) {
             roomData.turnIndex = (roomData.turnIndex + 1) % roomData.players.length;
         }
@@ -168,24 +162,13 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         for (const room in rooms) {
             rooms[room].players = rooms[room].players.filter(p => p.id !== socket.id);
-            if (rooms[room].players.length === 0) {
-                delete rooms[room];
-            } else {
-                io.to(room).emit('updateGameState', {
-                    players: rooms[room].players,
-                    currentTurnColor: rooms[room].colors[rooms[room].turnIndex || 0],
-                    diceValue: 0
-                });
-            }
+            if (rooms[room].players.length === 0) delete rooms[room];
         }
     });
 });
 
-http.listen(PORT, () => {
-    console.log(`Tap In Ludo Server running live on port ${PORT}`);
-});
+http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-// --- KEEP RENDER SERVER AWAKE 24/7 ---
 const https = require('https');
 const RENDER_SERVER_URL = "https://tapin-ludomaniac.onrender.com";
 
@@ -195,4 +178,4 @@ setInterval(() => {
     }).on('error', (err) => {
         console.log("Ping error:", err.message);
     });
-}, 10 * 60 * 1000); // Pings every 10 minutes
+}, 10 * 60 * 1000);
