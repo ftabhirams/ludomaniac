@@ -24,7 +24,7 @@ io.on('connection', (socket) => {
                 diceValue: 0,
                 hasRolled: false,
                 isStarted: false,
-                winners: [] // Tracks 1st, 2nd, 3rd place finishes
+                winners: []
             };
         }
 
@@ -96,9 +96,9 @@ io.on('connection', (socket) => {
             currentTurnColor: activePlayer.color
         });
 
-        // Check if player has any legal moves
+        // Auto pass turn if no moves possible
         const canMove = activePlayer.tokens.some(pos => {
-            if (pos === 57) return false; // Already finished
+            if (pos === 57) return false;
             if (pos === 0) return roll === 6;
             return (pos + roll) <= 57;
         });
@@ -130,22 +130,28 @@ io.on('connection', (socket) => {
         let tokenPos = activePlayer.tokens[tokenIndex];
         const roll = roomData.diceValue;
 
-        if (tokenPos === 57) return; // Token already inside home center
+        if (tokenPos === 57) return;
 
         const oldPos = tokenPos;
 
         if (tokenPos === 0) {
-            if (roll === 6) activePlayer.tokens[tokenIndex] = 1;
-            else return;
+            if (roll === 6) {
+                activePlayer.tokens[tokenIndex] = 1; // Unlock onto start tile
+            } else {
+                return socket.emit('errorMsg', "You need a 6 to open a pawn!");
+            }
         } else {
-            if (tokenPos + roll <= 57) activePlayer.tokens[tokenIndex] += roll;
-            else return;
+            if (tokenPos + roll <= 57) {
+                activePlayer.tokens[tokenIndex] += roll;
+            } else {
+                return socket.emit('errorMsg', "Roll is too high!");
+            }
         }
 
         const newPos = activePlayer.tokens[tokenIndex];
         let capturedSomeone = false;
 
-        // Check captures on unsafe circuit tiles
+        // Check for captures on unsafe tiles
         if (newPos >= 1 && newPos <= 51) {
             const offset = COLOR_OFFSETS[activePlayer.color];
             const landingGlobalTile = (newPos - 1 + offset) % 52;
@@ -158,7 +164,7 @@ io.on('connection', (socket) => {
                             if (otherPos >= 1 && otherPos <= 51) {
                                 const otherGlobalTile = (otherPos - 1 + otherOffset) % 52;
                                 if (otherGlobalTile === landingGlobalTile) {
-                                    otherPlayer.tokens[otherIdx] = 0; // Send back to base
+                                    otherPlayer.tokens[otherIdx] = 0; // Send back home
                                     capturedSomeone = true;
                                 }
                             }
@@ -170,19 +176,15 @@ io.on('connection', (socket) => {
 
         roomData.hasRolled = false;
 
-        // Check if this player finished all 4 pawns
+        // Win check
         if (!activePlayer.finished && activePlayer.tokens.every(pos => pos === 57)) {
             activePlayer.finished = true;
             const rank = roomData.winners.length + 1;
-            roomData.winners.push({
-                name: activePlayer.name,
-                color: activePlayer.color,
-                rank: rank
-            });
+            roomData.winners.push({ name: activePlayer.name, color: activePlayer.color, rank });
             io.to(room).emit('playerRankFinished', { name: activePlayer.name, color: activePlayer.color, rank });
         }
 
-        // Advance turn if not 6 and no capture
+        // Extra turn on 6 or capture
         if (roll !== 6 && !capturedSomeone) {
             advanceTurn(roomData);
         }
@@ -194,7 +196,8 @@ io.on('connection', (socket) => {
             newPos: newPos,
             players: roomData.players,
             currentTurnColor: roomData.colors[roomData.turnIndex],
-            winners: roomData.winners
+            winners: roomData.winners,
+            isStarted: roomData.isStarted
         });
     });
 
