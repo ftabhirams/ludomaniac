@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Tap In Ludo</title>
+  <title>Tap In Ludo - 3D Animated Dice</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -23,72 +23,94 @@
       overflow: hidden;
     }
 
-    /* TOP & BOTTOM HUDS (NO COINS, CLEAN DESIGN) */
-    .hud-bar {
-      width: 100%;
-      max-width: 360px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      z-index: 10;
-    }
+    /* TOP & BOTTOM HUDS */
+    .hud-bar { width: 100%; max-width: 360px; display: flex; justify-content: space-between; align-items: center; padding: 4px 0; z-index: 10; }
+    .player-card { background: #0d47a1; border: 2px solid #ffca28; border-radius: 12px; padding: 4px 8px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); width: 145px; }
+    .player-card.active-turn { border-color: #00e676; box-shadow: 0 0 12px #00e676; }
 
-    .player-card {
-      background: #0d47a1;
-      border: 2px solid #ffca28;
-      border-radius: 12px;
-      padding: 4px 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      max-width: 145px;
-    }
-
-    .player-card.active-turn {
-      border-color: #00e676;
-      box-shadow: 0 0 12px #00e676;
-    }
-
-    .avatar-wrapper {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: #1565c0;
-      overflow: hidden;
-      border: 2px solid #fff;
-      flex-shrink: 0;
-    }
-
+    .avatar-wrapper { width: 36px; height: 36px; border-radius: 8px; background: #1565c0; overflow: hidden; border: 2px solid #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
-    .player-details { display: flex; flex-direction: column; overflow: hidden; }
+    .player-details { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
     .player-name { font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
-    .color-label { font-size: 0.65rem; color: #00A878; font-weight: 700; text-transform: uppercase; }
+    .color-label { font-size: 0.65rem; color: #ffca28; font-weight: 700; text-transform: uppercase; }
 
-    /* 3D DICE BOX */
-    .dice-hud-box {
-      width: 42px;
-      height: 42px;
-      background: linear-gradient(135deg, #00b0ff, #0088cc);
-      border: 2px solid #fff;
+    /* REAL 3D DICE FACE WITH PIP DOTS & TUMBLING ANIMATION */
+    .dice-container { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+
+    .real-die {
+      width: 48px;
+      height: 48px;
+      background: #ffffff;
       border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #fff;
-      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
+      border: 2px solid #0d47a1;
+      box-shadow: inset 0 -4px 0 #cbd5e1, 0 6px 14px rgba(0,0,0,0.6);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 5px;
+      gap: 2px;
       cursor: pointer;
-      flex-shrink: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease;
     }
 
-    .dice-hud-box.rolling { animation: diceRollAnim 0.4s ease-in-out infinite; }
-    @keyframes diceRollAnim { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
+    .real-die .pip {
+      background: #0f172a;
+      border-radius: 50%;
+      width: 8px;
+      height: 8px;
+      justify-self: center;
+      align-self: center;
+      display: none;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+    }
 
-    /* DYNAMIC RESPONSIVE LUDO BOARD (FITS 100% OF SCREEN) */
+    /* PIP VISIBILITY MAPPING FOR 1 TO 6 DOTS */
+    .real-die[data-value="1"] .pip-5 { display: block; }
+    
+    .real-die[data-value="2"] .pip-3,
+    .real-die[data-value="2"] .pip-7 { display: block; }
+
+    .real-die[data-value="3"] .pip-3,
+    .real-die[data-value="3"] .pip-5,
+    .real-die[data-value="3"] .pip-7 { display: block; }
+
+    .real-die[data-value="4"] .pip-1,
+    .real-die[data-value="4"] .pip-3,
+    .real-die[data-value="4"] .pip-7,
+    .real-die[data-value="4"] .pip-9 { display: block; }
+
+    .real-die[data-value="5"] .pip-1,
+    .real-die[data-value="5"] .pip-3,
+    .real-die[data-value="5"] .pip-5,
+    .real-die[data-value="5"] .pip-7,
+    .real-die[data-value="5"] .pip-9 { display: block; }
+
+    .real-die[data-value="6"] .pip-1,
+    .real-die[data-value="6"] .pip-3,
+    .real-die[data-value="6"] .pip-4,
+    .real-die[data-value="6"] .pip-6,
+    .real-die[data-value="6"] .pip-7,
+    .real-die[data-value="6"] .pip-9 { display: block; }
+
+    /* 3D TUMBLING & FLIPPING ANIMATION */
+    .real-die.tumbling {
+      animation: dieTumble 0.5s ease-out;
+    }
+
+    @keyframes dieTumble {
+      0% { transform: perspective(300px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0); }
+      25% { transform: perspective(300px) rotateX(180deg) rotateY(90deg) scale(1.25) translateY(-14px); }
+      50% { transform: perspective(300px) rotateX(360deg) rotateY(180deg) scale(0.9) translateY(4px); }
+      75% { transform: perspective(300px) rotateX(540deg) rotateY(270deg) scale(1.15) translateY(-8px); }
+      100% { transform: perspective(300px) rotateX(720deg) rotateY(360deg) scale(1) translateY(0); }
+    }
+
+    .btn-roll { background: #00A878; color: #121212; font-weight: 700; border: none; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
+    .btn-start-match { background: #ffca28; color: #121212; font-weight: 800; border: none; padding: 10px 24px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 12px rgba(255,202,40,0.4); }
+
+    /* RESPONSIVE LUDO BOARD */
     .ludo-board {
       width: min(92vw, 42vh);
       height: min(92vw, 42vh);
@@ -102,21 +124,13 @@
       position: relative;
     }
 
-    /* BASES */
     .base { position: relative; display: flex; align-items: center; justify-content: center; }
     .base-green { grid-column: 1 / 7; grid-row: 1 / 7; background: #00a651; }
     .base-yellow { grid-column: 10 / 16; grid-row: 1 / 7; background: #fff200; }
     .base-red { grid-column: 1 / 7; grid-row: 10 / 16; background: #ed1c24; }
     .base-blue { grid-column: 10 / 16; grid-row: 10 / 16; background: #00aeef; }
 
-    .base-white-box {
-      width: 72%; height: 72%;
-      background: #fff; border-radius: 8px;
-      display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-      padding: 3px; gap: 3px;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
-    }
-
+    .base-white-box { width: 72%; height: 72%; background: #fff; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; padding: 3px; gap: 3px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
     .pawn-socket { border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; position: relative; }
     .socket-green { background: #e8f5e9; } .socket-yellow { background: #fffde7; } .socket-red { background: #ffebee; } .socket-blue { background: #e1f5fe; }
 
@@ -126,12 +140,10 @@
     .tri-left { position: absolute; top:0; left:0; width:50%; height:100%; background:#00a651; clip-path: polygon(0 0, 100% 50%, 0 100%); }
     .tri-right { position: absolute; top:0; right:0; width:50%; height:100%; background:#00aeef; clip-path: polygon(100% 0, 100% 100%, 0 50%); }
 
-    /* CELLS & STARS */
     .cell { border: 0.5px solid #ddd; background: #fff; display: flex; align-items: center; justify-content: center; position: relative; }
     .cell.path-green { background: #00a651; } .cell.path-yellow { background: #fff200; } .cell.path-red { background: #ed1c24; } .cell.path-blue { background: #00aeef; }
     .cell.star-cell::after { content: "⭐"; font-size: 0.6rem; }
 
-    /* 3D PIN PAWNS */
     .pin-pawn { width: 14px; height: 18px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); position: absolute; cursor: pointer; box-shadow: -2px 2px 4px rgba(0,0,0,0.5); transition: all 0.3s ease; z-index: 20; }
     .pin-pawn::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; }
     .pin-red { background: #ed1c24; border: 1.5px solid #900; }
@@ -139,7 +151,6 @@
     .pin-yellow { background: #ffcc00; border: 1.5px solid #998000; }
     .pin-blue { background: #00aeef; border: 1.5px solid #005599; }
 
-    /* VICTORY MODAL */
     .victory-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 16, 38, 0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     .victory-modal.active { display: flex; }
     .trophy-img { font-size: 4rem; animation: trophyBounce 1s infinite alternate; }
@@ -156,10 +167,10 @@
     <button onclick="location.reload()" style="margin-top:16px; background:#00e676; color:#121212; font-weight:700; border:none; padding:10px 24px; border-radius:20px; font-size:0.9rem; cursor:pointer;">Play Again</button>
   </div>
 
-  <!-- TOP HUDS (GREEN & YELLOW) -->
+  <!-- TOP HUDS -->
   <div class="hud-bar">
     <div class="player-card" id="card-green">
-      <div class="avatar-wrapper"><img id="img-green" src="https://via.placeholder.com/150" class="avatar-img"></div>
+      <div class="avatar-wrapper"><img id="img-green" class="avatar-img"></div>
       <div class="player-details">
         <span class="player-name" id="name-green">GREEN</span>
         <span class="color-label">GREEN</span>
@@ -171,7 +182,7 @@
         <span class="player-name" id="name-yellow">YELLOW</span>
         <span class="color-label">YELLOW</span>
       </div>
-      <div class="avatar-wrapper"><img id="img-yellow" src="https://via.placeholder.com/150" class="avatar-img"></div>
+      <div class="avatar-wrapper"><img id="img-yellow" class="avatar-img"></div>
     </div>
   </div>
 
@@ -185,10 +196,10 @@
     <div class="center-home"><div class="tri-top"></div><div class="tri-bottom"></div><div class="tri-left"></div><div class="tri-right"></div></div>
   </div>
 
-  <!-- BOTTOM HUDS (RED & BLUE + DICE) -->
+  <!-- BOTTOM HUDS -->
   <div class="hud-bar">
     <div class="player-card" id="card-red">
-      <div class="avatar-wrapper"><img id="img-red" src="https://via.placeholder.com/150" class="avatar-img"></div>
+      <div class="avatar-wrapper"><img id="img-red" class="avatar-img"></div>
       <div class="player-details">
         <span class="player-name" id="name-red">RED</span>
         <span class="color-label">RED</span>
@@ -196,18 +207,38 @@
     </div>
 
     <div class="player-card" id="card-blue">
-      <div class="dice-hud-box" id="dice-btn">🎲</div>
-      <div class="player-details">
+      <div class="player-details" style="text-align: right;">
         <span class="player-name" id="name-blue">BLUE</span>
         <span class="color-label">BLUE</span>
       </div>
-      <div class="avatar-wrapper"><img id="img-blue" src="https://via.placeholder.com/150" class="avatar-img"></div>
+      <div class="avatar-wrapper"><img id="img-blue" class="avatar-img"></div>
     </div>
+  </div>
+
+  <!-- REAL 3D DIE FACE WITH PIP DOTS -->
+  <div class="dice-container">
+    <div class="real-die" id="dice-btn" data-value="6">
+      <div class="pip pip-1"></div><div class="pip pip-2"></div><div class="pip pip-3"></div>
+      <div class="pip pip-4"></div><div class="pip pip-5"></div><div class="pip pip-6"></div>
+      <div class="pip pip-7"></div><div class="pip pip-8"></div><div class="pip pip-9"></div>
+    </div>
+    <button class="btn-roll" id="btn-roll-trigger">Roll Dice</button>
+    <button class="btn-start-match" id="btn-start-match-trigger" style="display: none;">🚀 Start Match</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+
+    function defaultAvatarSvg(color) {
+      const bg = color === 'red' ? '%23ed1c24' : color === 'green' ? '%2300a651' : color === 'yellow' ? '%23ffcc00' : '%2300aeef';
+      return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="${bg}"/><circle cx="50" cy="38" r="22" fill="%23ffffff"/><path d="M20,88 C20,65 35,55 50,55 C65,55 80,65 80,88 Z" fill="%23ffffff"/></svg>`;
+    }
+
+    ['red', 'green', 'yellow', 'blue'].forEach(c => {
+      const img = document.getElementById(`img-${c}`);
+      if (img) img.src = defaultAvatarSvg(c);
+    });
 
     const board = document.getElementById('board');
     const cells = {};
@@ -301,18 +332,18 @@
       }
     }
 
-    // READ REAL DISPLAY NAME & PROFILE PICTURE (DP) FROM CHAT APP URL
     const urlParams = new URLSearchParams(window.location.search);
     const myName = urlParams.get('name') || 'Guest';
-    const myDp = urlParams.get('dp') || 'https://via.placeholder.com/150';
+    const myDp = urlParams.get('dp') || '';
     const myRoom = urlParams.get('room') || 'default_room';
 
-    // Send real Name and DP image URL to Socket Server
     socket.emit('joinGame', { room: myRoom, name: myName, dp: myDp });
 
     const diceBtn = document.getElementById('dice-btn');
+    const btnRollTrigger = document.getElementById('btn-roll-trigger');
+    const btnStartMatchTrigger = document.getElementById('btn-start-match-trigger');
 
-    socket.on('updateGameState', ({ players, currentTurnColor, diceValue }) => {
+    socket.on('updateGameState', ({ players, currentTurnColor, diceValue, isStarted, isHost }) => {
       document.querySelectorAll('.pin-pawn').forEach(p => p.remove());
 
       ['green', 'yellow', 'red', 'blue'].forEach(c => {
@@ -320,11 +351,22 @@
         document.getElementById(`card-${c}`).classList.remove('active-turn');
       });
 
+      if (isHost && !isStarted && players.length >= 2) {
+        btnStartMatchTrigger.style.display = 'inline-block';
+      } else {
+        btnStartMatchTrigger.style.display = 'none';
+      }
+
       players.forEach(p => {
         const colorLower = p.color.toLowerCase();
         document.getElementById(`name-${colorLower}`).innerText = p.name;
-        if (p.dp) document.getElementById(`img-${colorLower}`).src = p.dp;
         
+        if (p.dp && p.dp.length > 10) {
+          const img = document.getElementById(`img-${colorLower}`);
+          img.onerror = () => { img.src = defaultAvatarSvg(colorLower); };
+          img.src = p.dp;
+        }
+
         if (p.color === currentTurnColor) {
           document.getElementById(`card-${colorLower}`).classList.add('active-turn');
         }
@@ -353,27 +395,5 @@
       });
     });
 
-    diceBtn.onclick = () => {
-      playSFX('roll');
-      diceBtn.classList.add('rolling');
-      socket.emit('rollDice', { room: myRoom });
-    };
-
-    socket.on('diceRolled', ({ rollerName, diceValue, currentTurnColor }) => {
-      setTimeout(() => {
-        diceBtn.classList.remove('rolling');
-        diceBtn.innerText = diceValue;
-      }, 300);
-    });
-
-    socket.on('gameWon', ({ winnerName, winnerColor }) => {
-      playSFX('win');
-      document.getElementById('winner-title').innerText = `${winnerName} WON!`;
-      document.getElementById('winner-subtext').innerText = `${winnerColor} team dominated the board!`;
-      document.getElementById('victory-modal').classList.add('active');
-    });
-
-    socket.on('errorMsg', (msg) => alert(msg));
-  </script>
-</body>
-</html>
+    btnStartMatchTrigger.onclick = () => {
+      socket.emit('startMatch', 
