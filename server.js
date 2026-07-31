@@ -22,43 +22,68 @@ io.on('connection', (socket) => {
                 turnIndex: 0,
                 colors: ['RED', 'GREEN', 'YELLOW', 'BLUE'],
                 diceValue: 0,
-                hasRolled: false
+                hasRolled: false,
+                isStarted: false,
+                winners: [] // Tracks 1st, 2nd, 3rd place finishes
             };
         }
 
         const roomData = rooms[room];
+
+        if (roomData.isStarted && !roomData.players.some(p => p.id === socket.id)) {
+            return socket.emit('errorMsg', 'Match in progress! Cannot join now.');
+        }
+
         let player = roomData.players.find(p => p.id === socket.id);
 
         if (!player) {
-            if (roomData.players.length >= 4) {
-                socket.emit('errorMsg', 'Match is full!');
-                return;
-            }
+            if (roomData.players.length >= 4) return socket.emit('errorMsg', 'Match is full!');
             const assignedColor = roomData.colors[roomData.players.length];
-            // Save player's real display name and Chat App DP image URL
             player = { 
                 id: socket.id, 
                 name: name || 'Player', 
-                dp: dp || 'https://via.placeholder.com/150',
+                dp: dp || '',
                 color: assignedColor, 
-                tokens: [0, 0, 0, 0] 
+                tokens: [0, 0, 0, 0],
+                finished: false
             };
             roomData.players.push(player);
         }
 
+        if (roomData.players.length === 4) roomData.isStarted = true;
+
         io.to(room).emit('updateGameState', {
             players: roomData.players,
             currentTurnColor: roomData.colors[roomData.turnIndex],
-            diceValue: roomData.diceValue
+            diceValue: roomData.diceValue,
+            isStarted: roomData.isStarted,
+            isHost: roomData.players[0].id === socket.id,
+            winners: roomData.winners
         });
+    });
+
+    socket.on('startMatch', ({ room }) => {
+        const roomData = rooms[room];
+        if (!roomData) return;
+        if (roomData.players[0] && roomData.players[0].id === socket.id) {
+            roomData.isStarted = true;
+            io.to(room).emit('updateGameState', {
+                players: roomData.players,
+                currentTurnColor: roomData.colors[roomData.turnIndex],
+                diceValue: 0,
+                isStarted: true,
+                isHost: true,
+                winners: roomData.winners
+            });
+        }
     });
 
     socket.on('rollDice', ({ room }) => {
         const roomData = rooms[room];
-        if (!roomData || roomData.players.length === 0) return;
+        if (!roomData || roomData.players.length === 0 || !roomData.isStarted) return;
 
         const activePlayer = roomData.players[roomData.turnIndex];
-        if (socket.id !== activePlayer.id) return socket.emit('errorMsg', "Not your turn!");
+        if (socket.id !== activePlayer.id) return socket.emit('errorMsg', `It's ${activePlayer.name}'s turn!`);
         if (roomData.hasRolled) return;
 
         const roll = Math.floor(Math.random() * 6) + 1;
@@ -71,8 +96,9 @@ io.on('connection', (socket) => {
             currentTurnColor: activePlayer.color
         });
 
-        // Auto pass turn if no valid moves possible
+        // Check if player has any legal moves
         const canMove = activePlayer.tokens.some(pos => {
+            if (pos === 57) return false; // Already finished
             if (pos === 0) return roll === 6;
             return (pos + roll) <= 57;
         });
@@ -81,12 +107,14 @@ io.on('connection', (socket) => {
             setTimeout(() => {
                 roomData.hasRolled = false;
                 if (roll !== 6) {
-                    roomData.turnIndex = (roomData.turnIndex + 1) % roomData.players.length;
+                    advanceTurn(roomData);
                 }
                 io.to(room).emit('updateGameState', {
                     players: roomData.players,
                     currentTurnColor: roomData.colors[roomData.turnIndex],
-                    diceValue: 0
+                    diceValue: 0,
+                    isStarted: roomData.isStarted,
+                    winners: roomData.winners
                 });
             }, 1200);
         }
@@ -102,23 +130,22 @@ io.on('connection', (socket) => {
         let tokenPos = activePlayer.tokens[tokenIndex];
         const roll = roomData.diceValue;
 
+        if (tokenPos === 57) return; // Token already inside home center
+
+        const oldPos = tokenPos;
+
         if (tokenPos === 0) {
-            if (roll === 6) {
-                activePlayer.tokens[tokenIndex] = 1;
-            } else {
-                return;
-            }
+            if (roll === 6) activePlayer.tokens[tokenIndex] = 1;
+            else return;
         } else {
-            if (tokenPos + roll <= 57) {
-                activePlayer.tokens[tokenIndex] += roll;
-            } else {
-                return;
-            }
+            if (tokenPos + roll <= 57) activePlayer.tokens[tokenIndex] += roll;
+            else return;
         }
 
         const newPos = activePlayer.tokens[tokenIndex];
         let capturedSomeone = false;
 
+        // Check captures on unsafe circuit tiles
         if (newPos >= 1 && newPos <= 51) {
             const offset = COLOR_OFFSETS[activePlayer.color];
             const landingGlobalTile = (newPos - 1 + offset) % 52;
@@ -131,7 +158,7 @@ io.on('connection', (socket) => {
                             if (otherPos >= 1 && otherPos <= 51) {
                                 const otherGlobalTile = (otherPos - 1 + otherOffset) % 52;
                                 if (otherGlobalTile === landingGlobalTile) {
-                                    otherPlayer.tokens[otherIdx] = 0;
+                                    otherPlayer.tokens[otherIdx] = 0; // Send back to base
                                     capturedSomeone = true;
                                 }
                             }
@@ -143,19 +170,31 @@ io.on('connection', (socket) => {
 
         roomData.hasRolled = false;
 
-        const hasWon = activePlayer.tokens.every(pos => pos === 57);
-        if (hasWon) {
-            io.to(room).emit('gameWon', { winnerName: activePlayer.name, winnerColor: activePlayer.color });
+        // Check if this player finished all 4 pawns
+        if (!activePlayer.finished && activePlayer.tokens.every(pos => pos === 57)) {
+            activePlayer.finished = true;
+            const rank = roomData.winners.length + 1;
+            roomData.winners.push({
+                name: activePlayer.name,
+                color: activePlayer.color,
+                rank: rank
+            });
+            io.to(room).emit('playerRankFinished', { name: activePlayer.name, color: activePlayer.color, rank });
         }
 
+        // Advance turn if not 6 and no capture
         if (roll !== 6 && !capturedSomeone) {
-            roomData.turnIndex = (roomData.turnIndex + 1) % roomData.players.length;
+            advanceTurn(roomData);
         }
 
-        io.to(room).emit('updateGameState', {
+        io.to(room).emit('tokenMovedStep', {
+            playerColor: activePlayer.color,
+            tokenIndex: tokenIndex,
+            oldPos: oldPos,
+            newPos: newPos,
             players: roomData.players,
             currentTurnColor: roomData.colors[roomData.turnIndex],
-            diceValue: 0
+            winners: roomData.winners
         });
     });
 
@@ -167,15 +206,18 @@ io.on('connection', (socket) => {
     });
 });
 
+function advanceTurn(roomData) {
+    let attempts = 0;
+    do {
+        roomData.turnIndex = (roomData.turnIndex + 1) % roomData.players.length;
+        attempts++;
+    } while (roomData.players[roomData.turnIndex].finished && attempts < roomData.players.length);
+}
+
 http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 const https = require('https');
 const RENDER_SERVER_URL = "https://tapin-ludomaniac.onrender.com";
-
 setInterval(() => {
-    https.get(RENDER_SERVER_URL, (res) => {
-        console.log("Keep-alive ping sent to Render!");
-    }).on('error', (err) => {
-        console.log("Ping error:", err.message);
-    });
+    https.get(RENDER_SERVER_URL, () => {}).on('error', () => {});
 }, 10 * 60 * 1000);
