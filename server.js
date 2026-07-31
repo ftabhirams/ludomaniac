@@ -85,3 +85,15 @@ io.on('connection', (socket) => {
 http.listen(PORT, () => {
     console.log(`Tap In Ludo Server running live on port ${PORT}`);
 });
+
+// --- KEEP RENDER SERVER AWAKE 24/7 ---
+const https = require('https');
+const RENDER_SERVER_URL = "https://tapin-ludomaniac.onrender.com"; // Replace with your Render URL
+
+setInterval(() => {
+    https.get(RENDER_SERVER_URL, (res) => {
+        console.log("Keep-alive ping sent to Render!");
+    }).on('error', (err) => {
+        console.log("Ping error:", err.message);
+    });
+}, 10 * 60 * 1000); // Pings every 10 minutes
