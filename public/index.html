@@ -7,29 +7,48 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; user-select: none; }
-        body { background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 12px; }
+        body { background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 10px; }
         
-        .header-box { text-align: center; margin-bottom: 12px; }
+        .header-box { text-align: center; margin-bottom: 8px; }
         h1 { color: #00A878; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
-        .status-card { background: #1e1e1e; padding: 10px 16px; border-radius: 10px; border: 1px solid #2c2c2c; width: 100%; max-width: 340px; text-align: center; margin-bottom: 14px; }
-        .mode-badge { background: rgba(0, 168, 120, 0.15); color: #00A878; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; display: inline-block; margin-bottom: 4px; }
+        .status-card { background: #1e1e1e; padding: 10px 16px; border-radius: 10px; border: 1px solid #2c2c2c; width: 100%; max-width: 340px; text-align: center; margin-bottom: 12px; }
+        .mode-badge { background: rgba(0, 168, 120, 0.15); color: #00A878; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; display: inline-block; }
         .turn-text { font-size: 0.85rem; color: #a0a0a0; margin-top: 4px; }
 
-        /* LUDO BOARD CANVAS LAYOUT */
-        .board-wrapper { width: 320px; height: 320px; background: #1a1a1a; border-radius: 14px; position: relative; border: 3px solid #00A878; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
-        .house { border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #121212; position: relative; }
+        /* LUDO BOARD */
+        .board-wrapper { width: 330px; height: 330px; background: #181818; border-radius: 14px; border: 4px solid #00A878; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
+        .house { border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
         .house.red { background: #ff4d4d; }
         .house.green { background: #00e676; }
         .house.yellow { background: #ffca28; }
         .house.blue { background: #29b6f6; }
-        
-        .player-badge { font-size: 0.75rem; background: rgba(18, 18, 18, 0.85); color: #fff; padding: 3px 8px; border-radius: 6px; margin-top: 6px; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .player-name { font-weight: 700; font-size: 0.8rem; color: #121212; background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
 
-        /* CONTROLS AREA */
-        .controls { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        /* PAWNS */
+        .tokens-box { display: flex; gap: 6px; }
+        .token { width: 24px; height: 24px; border-radius: 50%; background: #121212; border: 2px solid #fff; color: #fff; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.5); transition: transform 0.15s; }
+        .token:active { transform: scale(1.2); }
+
+        /* CONTROLS & JUGGLING DICE ANIMATION */
+        .controls { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .dice-box { width: 64px; height: 64px; background: #1e1e1e; border: 2px solid #00A878; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: bold; color: #00A878; box-shadow: 0 4px 12px rgba(0,168,120,0.2); }
-        .btn-roll { background: #00A878; color: #121212; font-weight: 700; border: none; padding: 12px 28px; border-radius: 25px; font-size: 0.95rem; cursor: pointer; transition: transform 0.1s; }
+        
+        /* 3D Dice Juggle / Shake Effect */
+        .dice-box.juggle {
+            animation: diceShake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes diceShake {
+            0% { transform: scale(1) rotate(0deg) translateY(0); }
+            20% { transform: scale(1.1) rotate(-15deg) translateY(-10px); }
+            40% { transform: scale(0.9) rotate(15deg) translateY(5px); }
+            60% { transform: scale(1.15) rotate(-20deg) translateY(-12px); }
+            80% { transform: scale(0.95) rotate(10deg) translateY(2px); }
+            100% { transform: scale(1) rotate(0deg) translateY(0); }
+        }
+
+        .btn-roll { background: #00A878; color: #121212; font-weight: 700; border: none; padding: 12px 28px; border-radius: 25px; font-size: 0.95rem; cursor: pointer; }
         .btn-roll:active { transform: scale(0.95); }
     </style>
 </head>
@@ -41,30 +60,30 @@
 
     <div class="status-card">
         <div class="mode-badge">⚡ Private Match</div>
-        <div id="turn-display" class="turn-text">Connecting to match...</div>
+        <div id="turn-display" class="turn-text">Connecting to game...</div>
     </div>
 
-    <!-- 2D Ludo Board -->
+    <!-- 2D LUDO BOARD WITH INTERACTIVE PAWNS -->
     <div class="board-wrapper">
         <div class="house red">
-            RED
-            <div id="player-red" class="player-badge">Waiting...</div>
+            <div id="name-red" class="player-name">RED</div>
+            <div class="tokens-box" id="tokens-red"></div>
         </div>
         <div class="house green">
-            GREEN
-            <div id="player-green" class="player-badge">Waiting...</div>
+            <div id="name-green" class="player-name">GREEN</div>
+            <div class="tokens-box" id="tokens-green"></div>
         </div>
         <div class="house yellow">
-            YELLOW
-            <div id="player-yellow" class="player-badge">Waiting...</div>
+            <div id="name-yellow" class="player-name">YELLOW</div>
+            <div class="tokens-box" id="tokens-yellow"></div>
         </div>
         <div class="house blue">
-            BLUE
-            <div id="player-blue" class="player-badge">Waiting...</div>
+            <div id="name-blue" class="player-name">BLUE</div>
+            <div class="tokens-box" id="tokens-blue"></div>
         </div>
     </div>
 
-    <!-- Dice Roll Area -->
+    <!-- CONTROLS -->
     <div class="controls">
         <div id="dice-result" class="dice-box">🎲</div>
         <button id="btn-roll" class="btn-roll">Roll Dice</button>
@@ -75,37 +94,122 @@
     <script>
         const socket = io();
 
-        // 1. AUTO-DETECT NAME & ROOM FROM CHAT APP URL (NO PROMPTS / NO CODES SHOWN)
+        // WEB AUDIO SYNTHESIZER FOR SOUND EFFECTS (NO EXTERNAL MP3s NEEDED)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'roll') {
+                // Rapid clack sounds for dice rolling
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'move') {
+                // Soft pop sound for moving pawns
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } else if (type === 'win') {
+                // Victory Fanfare Chime
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+                notes.forEach((freq, idx) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.frequency.value = freq;
+                    const startTime = audioCtx.currentTime + (idx * 0.12);
+                    noteGain.gain.setValueAtTime(0.3, startTime);
+                    noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+                    noteOsc.start(startTime);
+                    noteOsc.stop(startTime + 0.3);
+                });
+            }
+        }
+
+        // 1. AUTO-DETECT NAME & ROOM FROM CHAT APP URL
         const urlParams = new URLSearchParams(window.location.search);
         const myName = urlParams.get('name') || 'Player';
         const myRoom = urlParams.get('room') || 'default_room';
 
-        // Auto Join Game Session on Page Load
         socket.emit('joinGame', { room: myRoom, name: myName });
 
-        // Update Board & Active Players
-        socket.on('updatePlayers', ({ players, currentTurnColor }) => {
+        // Update Board & Game State
+        socket.on('updateGameState', ({ players, currentTurnColor, diceValue }) => {
+            document.getElementById('turn-display').innerText = `Current Turn: ${currentTurnColor}`;
+
             ['red', 'green', 'yellow', 'blue'].forEach(c => {
-                document.getElementById(`player-${c}`).innerText = 'Waiting...';
+                document.getElementById(`name-${c}`).innerText = c.toUpperCase();
+                document.getElementById(`tokens-${c}`).innerHTML = '';
             });
 
             players.forEach(p => {
-                const el = document.getElementById(`player-${p.color.toLowerCase()}`);
-                if (el) el.innerText = p.name;
-            });
+                const colorLower = p.color.toLowerCase();
+                document.getElementById(`name-${colorLower}`).innerText = p.name;
+                
+                const tokenContainer = document.getElementById(`tokens-${colorLower}`);
+                tokenContainer.innerHTML = '';
 
-            document.getElementById('turn-display').innerText = `Current Turn: ${currentTurnColor}`;
+                p.tokens.forEach((pos, idx) => {
+                    const tokenEl = document.createElement('div');
+                    tokenEl.className = 'token';
+                    tokenEl.innerText = pos === 0 ? '🔒' : pos;
+                    
+                    // Click pawn to move
+                    tokenEl.onclick = () => {
+                        playSound('move');
+                        socket.emit('moveToken', { room: myRoom, tokenIndex: idx });
+                    };
+
+                    tokenContainer.appendChild(tokenEl);
+                });
+            });
         });
 
-        // Trigger Dice Roll
+        // Trigger Dice Roll with Animation & Sound
+        const diceBox = document.getElementById('dice-result');
         document.getElementById('btn-roll').onclick = () => {
+            playSound('roll');
+            diceBox.classList.add('juggle'); // Start 3D Shake animation
             socket.emit('rollDice', { room: myRoom });
         };
 
         // Handle Broadcasted Dice Result
-        socket.on('diceRolled', ({ rollerName, diceValue, nextTurnColor }) => {
-            document.getElementById('dice-result').innerText = diceValue;
-            document.getElementById('turn-display').innerText = `${rollerName} rolled a ${diceValue}! Next Turn: ${nextTurnColor}`;
+        socket.on('diceRolled', ({ rollerName, diceValue, currentTurnColor }) => {
+            // Play rapid juggling sound effect
+            let pings = 0;
+            const rollInterval = setInterval(() => {
+                playSound('roll');
+                pings++;
+                if (pings >= 3) clearInterval(rollInterval);
+            }, 100);
+
+            setTimeout(() => {
+                diceBox.classList.remove('juggle'); // Stop 3D Shake
+                diceBox.innerText = diceValue;
+                document.getElementById('turn-display').innerText = `${rollerName} rolled a ${diceValue}! Tap a pawn to move.`;
+            }, 500);
+        });
+
+        // Victory Event
+        socket.on('gameWon', ({ winnerName, winnerColor }) => {
+            playSound('win');
+            document.getElementById('turn-display').innerHTML = `🏆 <strong>${winnerName} (${winnerColor}) WON THE MATCH!</strong> 🎉`;
+            alert(`🏆 CONGRATULATIONS! ${winnerName} (${winnerColor}) WON THE LUDO MATCH! 🎉`);
         });
 
         socket.on('errorMsg', (msg) => alert(msg));
