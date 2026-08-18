@@ -33,14 +33,21 @@
     .player-card { background: #0a2e66; border: 2px solid #1a56a7; border-radius: 12px; padding: 4px 6px; display: flex; align-items: center; gap: 6px; width: 170px; position: relative; transition: all 0.3s ease; }
     .player-card.active-turn { border-color: #00e676 !important; background: #0d47a1 !important; box-shadow: 0 0 15px #00e676 !important; }
 
+    .you-badge {
+      position: absolute; top: -10px; right: 8px;
+      background: #ffca28; color: #121212; font-size: 0.55rem; font-weight: 800;
+      padding: 1px 6px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      display: none;
+    }
+
     .avatar-wrapper { width: 36px; height: 36px; border-radius: 8px; background: #1565c0; overflow: hidden; border: 2px solid #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
     .player-details { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
     .player-name { font-size: 0.72rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
-    .color-label { font-size: 0.6rem; color: #ffca28; font-weight: 700; text-transform: uppercase; }
+    .status-subtext { font-size: 0.6rem; color: #ffca28; font-weight: 700; text-transform: uppercase; }
 
-    /* REAL 3D DICE IN PLAYER CARD */
+    /* REAL 3D CUBE DIE */
     .card-dice {
       width: 38px; height: 38px; background: #ffffff; border-radius: 8px;
       border: 2px solid #0d47a1; box-shadow: inset 0 -3px 0 #cbd5e1, 0 3px 6px rgba(0,0,0,0.4);
@@ -136,12 +143,13 @@
   <!-- TOP HUDS -->
   <div class="hud-bar">
     <div class="player-card" id="card-green">
+      <div class="you-badge" id="you-green">⭐ YOU</div>
       <div class="avatar-wrapper"><img id="img-green" class="avatar-img"></div>
       <div class="player-details">
         <span class="player-name" id="name-green">GREEN</span>
-        <span class="color-label">GREEN</span>
+        <span class="status-subtext" id="status-green">⌛ WAITING</span>
       </div>
-      <div class="card-dice" id="dice-green" data-value="6">
+      <div class="card-dice" id="dice-green" data-value="1">
         <div class="pip pip-1"></div><div class="pip pip-2"></div><div class="pip pip-3"></div>
         <div class="pip pip-4"></div><div class="pip pip-5"></div><div class="pip pip-6"></div>
         <div class="pip pip-7"></div><div class="pip pip-8"></div><div class="pip pip-9"></div>
@@ -149,14 +157,15 @@
     </div>
 
     <div class="player-card" id="card-yellow">
-      <div class="card-dice" id="dice-yellow" data-value="6">
+      <div class="you-badge" id="you-yellow">⭐ YOU</div>
+      <div class="card-dice" id="dice-yellow" data-value="1">
         <div class="pip pip-1"></div><div class="pip pip-2"></div><div class="pip pip-3"></div>
         <div class="pip pip-4"></div><div class="pip pip-5"></div><div class="pip pip-6"></div>
         <div class="pip pip-7"></div><div class="pip pip-8"></div><div class="pip pip-9"></div>
       </div>
       <div class="player-details" style="text-align: right;">
         <span class="player-name" id="name-yellow">YELLOW</span>
-        <span class="color-label">YELLOW</span>
+        <span class="status-subtext" id="status-yellow">⌛ WAITING</span>
       </div>
       <div class="avatar-wrapper"><img id="img-yellow" class="avatar-img"></div>
     </div>
@@ -178,12 +187,13 @@
   <!-- BOTTOM HUDS -->
   <div class="hud-bar">
     <div class="player-card" id="card-red">
+      <div class="you-badge" id="you-red">⭐ YOU</div>
       <div class="avatar-wrapper"><img id="img-red" class="avatar-img"></div>
       <div class="player-details">
         <span class="player-name" id="name-red">RED</span>
-        <span class="color-label">RED</span>
+        <span class="status-subtext" id="status-red">⌛ WAITING</span>
       </div>
-      <div class="card-dice" id="dice-red" data-value="6">
+      <div class="card-dice" id="dice-red" data-value="1">
         <div class="pip pip-1"></div><div class="pip pip-2"></div><div class="pip pip-3"></div>
         <div class="pip pip-4"></div><div class="pip pip-5"></div><div class="pip pip-6"></div>
         <div class="pip pip-7"></div><div class="pip pip-8"></div><div class="pip pip-9"></div>
@@ -191,14 +201,15 @@
     </div>
 
     <div class="player-card" id="card-blue">
-      <div class="card-dice" id="dice-blue" data-value="6">
+      <div class="you-badge" id="you-blue">⭐ YOU</div>
+      <div class="card-dice" id="dice-blue" data-value="1">
         <div class="pip pip-1"></div><div class="pip pip-2"></div><div class="pip pip-3"></div>
         <div class="pip pip-4"></div><div class="pip pip-5"></div><div class="pip pip-6"></div>
         <div class="pip pip-7"></div><div class="pip pip-8"></div><div class="pip pip-9"></div>
       </div>
       <div class="player-details" style="text-align: right;">
         <span class="player-name" id="name-blue">BLUE</span>
-        <span class="color-label">BLUE</span>
+        <span class="status-subtext" id="status-blue">⌛ WAITING</span>
       </div>
       <div class="avatar-wrapper"><img id="img-blue" class="avatar-img"></div>
     </div>
@@ -326,7 +337,7 @@
     });
 
     socket.on('tokenMovedStep', async ({ playerColor, tokenIndex, oldPos, newPos, players, currentTurnColor, winners }) => {
-      // ANIMATE STEP-BY-STEP HOPPING FOR UNLOCKED PAWNS
+      // ANIMATE STEP-BY-STEP HOPPING
       if (oldPos > 0 && newPos > oldPos) {
         for (let p = oldPos + 1; p <= newPos; p++) {
           playSFX('move');
@@ -363,9 +374,26 @@
     function renderFullBoardState(players, currentTurnColor, isStarted, isHost) {
       document.querySelectorAll('.pin-pawn').forEach(p => p.remove());
 
+      // ALWAYS RENDER INITIAL 4 PAWNS IN SOCKETS FOR ALL 4 COLORS
       ['green', 'yellow', 'red', 'blue'].forEach(c => {
         document.getElementById(`name-${c}`).innerText = 'Waiting...';
+        document.getElementById(`status-${c}`).innerText = '⌛ WAITING';
+        document.getElementById(`status-${c}`).style.color = '#ffca28';
         document.getElementById(`card-${c}`).classList.remove('active-turn');
+        document.getElementById(`you-${c}`).style.display = 'none';
+
+        for (let i = 0; i < 4; i++) {
+          const socketEl = document.getElementById(`sock-${c}-${i}`);
+          if (socketEl && !socketEl.querySelector('.pin-pawn')) {
+            const pawnEl = document.createElement('div');
+            pawnEl.id = `pawn_${c.toUpperCase()}_${i}`;
+            pawnEl.className = `pin-pawn pin-${c}`;
+            const clickHandler = () => socket.emit('moveToken', { room: myRoom, tokenIndex: i });
+            socketEl.onclick = clickHandler;
+            pawnEl.onclick = clickHandler;
+            socketEl.appendChild(pawnEl);
+          }
+        }
       });
 
       if (isHost && !isStarted && players.length >= 2) {
@@ -379,6 +407,13 @@
       players.forEach(p => {
         const colorLower = p.color.toLowerCase();
         document.getElementById(`name-${colorLower}`).innerText = p.name;
+        document.getElementById(`status-${colorLower}`).innerText = '🟢 ONLINE';
+        document.getElementById(`status-${colorLower}`).style.color = '#00e676';
+
+        // DISPLAY "⭐ YOU" BADGE FOR YOUR OWN CARD
+        if (p.id === socket.id) {
+          document.getElementById(`you-${colorLower}`).style.display = 'block';
+        }
         
         if (p.dp && p.dp.length > 10) {
           const img = document.getElementById(`img-${colorLower}`);
@@ -392,13 +427,15 @@
         }
 
         p.tokens.forEach((pos, idx) => {
-          const pawnEl = document.createElement('div');
-          pawnEl.id = `pawn_${p.color}_${idx}`;
-          pawnEl.className = `pin-pawn pin-${colorLower}`;
+          let pawnEl = document.getElementById(`pawn_${p.color}_${idx}`);
+          if (!pawnEl) {
+            pawnEl = document.createElement('div');
+            pawnEl.id = `pawn_${p.color}_${idx}`;
+            pawnEl.className = `pin-pawn pin-${colorLower}`;
+          }
 
           const handleTokenClick = () => {
             playSFX('move');
-            pawnEl.classList.add('hopping');
             socket.emit('moveToken', { room: myRoom, tokenIndex: idx });
           };
 
@@ -407,7 +444,7 @@
           if (pos === 0) {
             const socketEl = document.getElementById(`sock-${colorLower}-${idx}`);
             if (socketEl) {
-              socketEl.onclick = handleTokenClick; // ALLOW TAPPING SOCKET OR PAWN TO UNLOCK ON 6!
+              socketEl.onclick = handleTokenClick;
               socketEl.appendChild(pawnEl);
             }
           } else if (pos === 57) {
@@ -443,6 +480,17 @@
         diceEl.onclick = () => {
           playSFX('roll');
           diceEl.classList.add('tumbling');
+
+          const tumbleInterval = setInterval(() => {
+            const randomVal = Math.floor(Math.random() * 6) + 1;
+            diceEl.setAttribute('data-value', randomVal);
+          }, 50);
+
+          setTimeout(() => {
+            clearInterval(tumbleInterval);
+            diceEl.classList.remove('tumbling');
+          }, 500);
+
           socket.emit('rollDice', { room: myRoom });
         };
       }
