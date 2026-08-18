@@ -9,7 +9,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
 
+// GLOBAL STARTING OFFSETS FOR 52-CELL CIRCUIT
 const COLOR_OFFSETS = { RED: 0, GREEN: 13, YELLOW: 26, BLUE: 39 };
+
+// 8 SAFE TILES (4 STARTS + 4 STARS) WHERE PAWNS CANNOT BE ATTACKED
 const SAFE_GLOBAL_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
 
 io.on('connection', (socket) => {
@@ -136,22 +139,22 @@ io.on('connection', (socket) => {
 
         if (tokenPos === 0) {
             if (roll === 6) {
-                activePlayer.tokens[tokenIndex] = 1; // Unlock onto start tile
+                activePlayer.tokens[tokenIndex] = 1;
             } else {
-                return socket.emit('errorMsg', "You need a 6 to open a pawn!");
+                return socket.emit('errorMsg', 'You need a 6 to open a pawn!');
             }
         } else {
             if (tokenPos + roll <= 57) {
                 activePlayer.tokens[tokenIndex] += roll;
             } else {
-                return socket.emit('errorMsg', "Roll is too high!");
+                return socket.emit('errorMsg', 'Roll is too high!');
             }
         }
 
         const newPos = activePlayer.tokens[tokenIndex];
         let capturedSomeone = false;
 
-        // Check for captures on unsafe tiles
+        // Check captures on unsafe tiles
         if (newPos >= 1 && newPos <= 51) {
             const offset = COLOR_OFFSETS[activePlayer.color];
             const landingGlobalTile = (newPos - 1 + offset) % 52;
@@ -176,7 +179,7 @@ io.on('connection', (socket) => {
 
         roomData.hasRolled = false;
 
-        // Win check
+        // Check if player finished all 4 pawns
         if (!activePlayer.finished && activePlayer.tokens.every(pos => pos === 57)) {
             activePlayer.finished = true;
             const rank = roomData.winners.length + 1;
@@ -184,7 +187,6 @@ io.on('connection', (socket) => {
             io.to(room).emit('playerRankFinished', { name: activePlayer.name, color: activePlayer.color, rank });
         }
 
-        // Extra turn on 6 or capture
         if (roll !== 6 && !capturedSomeone) {
             advanceTurn(roomData);
         }
@@ -217,7 +219,7 @@ function advanceTurn(roomData) {
     } while (roomData.players[roomData.turnIndex].finished && attempts < roomData.players.length);
 }
 
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+http.listen(PORT, () => console.log(`Server running live on port ${PORT}`));
 
 const https = require('https');
 const RENDER_SERVER_URL = "https://tapin-ludomaniac.onrender.com";
