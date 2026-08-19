@@ -9,10 +9,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
 
-// GLOBAL STARTING OFFSETS FOR 52-CELL CIRCUIT
+// GLOBAL STARTING OFFSETS FOR THE 52-CELL CIRCUIT
 const COLOR_OFFSETS = { RED: 0, GREEN: 13, YELLOW: 26, BLUE: 39 };
 
-// 8 SAFE TILES (4 STARTS + 4 STARS) WHERE PAWNS CANNOT BE ATTACKED
+// SAFE TILES (4 STARTS + 4 STARS) WHERE PAWNS CANNOT BE ATTACKED
 const SAFE_GLOBAL_TILES = [0, 8, 13, 21, 26, 34, 39, 47];
 
 io.on('connection', (socket) => {
@@ -99,7 +99,7 @@ io.on('connection', (socket) => {
             currentTurnColor: activePlayer.color
         });
 
-        // Auto pass turn if no moves possible
+        // Auto-check for valid moves
         const canMove = activePlayer.tokens.some(pos => {
             if (pos === 57) return false;
             if (pos === 0) return roll === 6;
@@ -138,17 +138,11 @@ io.on('connection', (socket) => {
         const oldPos = tokenPos;
 
         if (tokenPos === 0) {
-            if (roll === 6) {
-                activePlayer.tokens[tokenIndex] = 1;
-            } else {
-                return socket.emit('errorMsg', 'You need a 6 to open a pawn!');
-            }
+            if (roll === 6) activePlayer.tokens[tokenIndex] = 1;
+            else return socket.emit('errorMsg', 'You need a 6 to open a pawn!');
         } else {
-            if (tokenPos + roll <= 57) {
-                activePlayer.tokens[tokenIndex] += roll;
-            } else {
-                return socket.emit('errorMsg', 'Roll is too high!');
-            }
+            if (tokenPos + roll <= 57) activePlayer.tokens[tokenIndex] += roll;
+            else return socket.emit('errorMsg', 'Roll is too high!');
         }
 
         const newPos = activePlayer.tokens[tokenIndex];
@@ -179,7 +173,6 @@ io.on('connection', (socket) => {
 
         roomData.hasRolled = false;
 
-        // Check if player finished all 4 pawns
         if (!activePlayer.finished && activePlayer.tokens.every(pos => pos === 57)) {
             activePlayer.finished = true;
             const rank = roomData.winners.length + 1;
@@ -198,8 +191,7 @@ io.on('connection', (socket) => {
             newPos: newPos,
             players: roomData.players,
             currentTurnColor: roomData.colors[roomData.turnIndex],
-            winners: roomData.winners,
-            isStarted: roomData.isStarted
+            winners: roomData.winners
         });
     });
 
@@ -219,7 +211,7 @@ function advanceTurn(roomData) {
     } while (roomData.players[roomData.turnIndex].finished && attempts < roomData.players.length);
 }
 
-http.listen(PORT, () => console.log(`Server running live on port ${PORT}`));
+http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 const https = require('https');
 const RENDER_SERVER_URL = "https://tapin-ludomaniac.onrender.com";
